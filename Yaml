@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  title: RPG: Immersion Overdrive API
+  description: API for managing the RPG: Immersion Overdrive experience, including game initialization, universe selection, character creation, and saving/loading game states.
+  version: 1.0.0
+servers:
+  - url: https://api.rpg-immersion-overdrive.com
+    description: Production server for RPG API
+  - url: https://staging.api.rpg-immersion-overdrive.com
+    description: Staging server for testing
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+security:
+  - apiKeyAuth: []
+
+paths:
+  /game/new:
+    post:
+      operationId: startNewGame
+      summary: Starts a new game session.
+      description: Initializes a new RPG session and optionally sets a universe.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                universe:
+                  type: string
+                  enum:
+                    - Medieval Fantasy
+                    - Space Opera
+                    - Slice of Life
+                    - Cyberpunk
+                    - Post-Apocalyptic
+                    - Superhero
+                    - Steampunk
+                    - Custom
+                  description: The universe in which the RPG will take place.
+                customUniverseDescription:
+                  type: string
+                  description: If 'Custom' is selected, describe the custom universe here.
+      responses:
+        '200':
+          description: New game session started successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    description: Unique ID for the game session.
+                  universe:
+                    type: string
+                    description: The selected universe for the RPG session.
+
+  /character/create:
+    post:
+      operationId: createCharacter
+      summary: Creates a new character.
+      description: Sets up a new character for the RPG session, including name, gender, skills, and personality.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The ID of the current game session.
+                name:
+                  type: string
+                  description: The name of the character.
+                gender:
+                  type: string
+                  enum:
+                    - Male
+                    - Female
+                    - Non-Binary
+                    - Other
+                  description: The gender of the character.
+                skills:
+                  type: array
+                  items:
+                    type: string
+                  description: A list of skills or talents for the character (e.g., swordsmanship, hacking).
+                personality:
+                  type: string
+                  description: An optional description of the character's personality or moral alignment.
+      responses:
+        '201':
+          description: Character created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  characterId:
+                    type: string
+                    description: Unique ID for the character.
+                  startingItems:
+                    type: array
+                    items:
+                      type: string
+                    description: List of items assigned to the character.
+                  currency:
+                    type: integer
+                    description: Starting amount of currency for the character.
+
+  /game/save:
+    post:
+      operationId: saveGameState
+      summary: Saves the current game state.
+      description: Persists the current game state, including character progress, money, and story events.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: The ID of the current game session.
+                savePoint:
+                  type: string
+                  description: A description or name for the save point.
+      responses:
+        '200':
+          description: Game state saved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  saveId:
+                    type: string
+                    description: Unique ID for the saved game state.
+
+  /game/load:
+    get:
+      operationId: loadGameState
+      summary: Loads a previously saved game state.
+      description: Restores a game session from a specific save point.
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          description: The ID of the game session to restore.
+          schema:
+            type: string
+        - name: saveId
+          in: query
+          required: true
+          description: The ID of the save point to load.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game state loaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    description: The ID of the restored game session.
+                  currentDay:
+                    type: integer
+                    description: The current in-game day.
+                  currency:
+                    type: integer
+                    description: The current amount of currency.
+                  location:
+                    type: string
+                    description: The current in-game location.
+                  mood:
+                    type: string
+                    description: The protagonist's current mood.
+
+  /events/random:
+    get:
+      operationId: generateRandomEvent
+      summary: Generates a random event or encounter.
+      description: Produces a random event, such as a character interaction, conflict, or opportunity, based on the current game state.
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          description: The ID of the current game session.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Random event generated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eventId:
+                    type: string
+                    description: Unique ID for the generated event.
+                  description:
+                    type: string
+                    description: Narrative description of the event.
+                  choices:
+                    type: array
+                    items:
+                      type: string
+                    description: List of choices available for the player.
